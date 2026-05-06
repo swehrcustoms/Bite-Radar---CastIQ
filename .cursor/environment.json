@@ -1,0 +1,3 @@
+{
+  "install": "python3 -m pip install --break-system-packages -r requirements.txt && python3 -m pip install --break-system-packages playwright beautifulsoup4 lxml fastapi uvicorn && python3 -m playwright install chromium"
+}
