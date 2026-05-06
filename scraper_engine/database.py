@@ -71,3 +71,25 @@ def upsert_reports(db_path: Path, reports: Iterable[ScrapedReport]) -> int:
 def upsert_report(db_path: Path, report: ScrapedReport) -> int:
     """Insert a single report and return the inserted count (0 or 1)."""
     return upsert_reports(db_path, [report])
+
+
+def fetch_reports(db_path: Path, limit: int | None = None) -> list[dict[str, str | int | None]]:
+    """
+    Fetch reports sorted by report_date (newest first) then id (newest first).
+    """
+    query = """
+        SELECT id, source, title, body, report_date, source_url, scraped_at
+        FROM reports
+        ORDER BY
+            COALESCE(report_date, scraped_at) DESC,
+            id DESC
+    """
+    params: tuple[int, ...] = ()
+    if limit is not None:
+        query += " LIMIT ?"
+        params = (limit,)
+
+    with sqlite3.connect(db_path) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(query, params).fetchall()
+        return [dict(row) for row in rows]
