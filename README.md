@@ -1,25 +1,23 @@
 # Bite-Radar---CastIQ
 
-Phases 1 and 2 of the Minnesota Fishing Reports Aggregator MVP are implemented:
-- Phase 1: Python scraper engine
-- Phase 2: FastAPI endpoint serving the SQLite data
+Minnesota Fishing Reports Aggregator MVP.
 
-## Implemented scope
-
-- SQLite database initialization (`data/reports.db`)
-- Scraper for first source: **Mille Lacs** (`https://millelacs.com/lake-and-fishing-reports`)
-- CLI runner to execute the scrape and persist results
-- FastAPI endpoint: `GET /api/reports` sorted by report date (newest first)
+Implemented phases:
+- Phase 1: Python scraper engine (Mille Lacs source)
+- Phase 2: FastAPI backend endpoint (`/api/reports`)
+- Phase 3: Next.js + Tailwind frontend feed with source filtering
 
 ## Project structure
 
 ```text
 .
+├── .cursor/
+│   └── environment.json
 ├── data/
+├── frontend/
 ├── requirements.txt
 └── scraper_engine/
     ├── api.py
-    ├── __init__.py
     ├── database.py
     ├── main.py
     ├── models.py
@@ -27,9 +25,9 @@ Phases 1 and 2 of the Minnesota Fishing Reports Aggregator MVP are implemented:
         └── mille_lacs.py
 ```
 
-## Local setup (exact commands)
+## Setup (backend)
 
-Run these commands from the repository root:
+Run from repository root:
 
 ```bash
 python3 -m venv .venv
@@ -39,40 +37,46 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-## Phase 1: run scraper
+## Phase 1: scraper
 
 ```bash
 python -m scraper_engine.main
 ```
 
-If you want to run with a visible browser window for debugging:
+## Phase 2: API
 
 ```bash
-python -m scraper_engine.main --headed
+python -m uvicorn scraper_engine.api:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Use a custom database path if needed:
+Test API directly:
 
 ```bash
-python -m scraper_engine.main --db-path data/reports.db
+curl "http://127.0.0.1:8000/api/reports"
 ```
 
-## Phase 2: run API
+## Phase 3: frontend
+
+In a second terminal:
 
 ```bash
-python -m uvicorn scraper_engine.api:app --reload
+cd frontend
+npm install
+npm run dev
 ```
 
-Then open:
+Open:
 
 ```text
-http://127.0.0.1:8000/api/reports
+http://127.0.0.1:3000
 ```
 
-## What should happen
+The frontend calls its own Next.js route (`/api/reports`), which proxies to the
+Python backend (`http://127.0.0.1:8000/api/reports` by default).
 
-- A SQLite file is created at `data/reports.db` if it does not already exist.
-- The `reports` table is created automatically.
-- The latest Mille Lacs report page is scraped.
-- One row is inserted (or ignored if duplicate based on source/title/date).
-- The API returns JSON sorted by `report_date` descending.
+To point the frontend proxy at a different backend URL:
+
+```bash
+cd frontend
+BACKEND_API_URL="http://127.0.0.1:8000" npm run dev
+```
